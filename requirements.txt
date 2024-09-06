@@ -4,5 +4,6 @@ threading
 pyautogui
 pickle
 zlib
+struct
 tkinter
 Pillow

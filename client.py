@@ -4,6 +4,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import pickle
 import zlib
+import struct
 import pyautogui
 
 class RemoteViewer:
@@ -22,22 +23,24 @@ class RemoteViewer:
 
     def receive_screen(self):
         try:
-            data = b""
             while True:
-                packet = self.client_socket.recv(4096)
-                if not packet:
-                    break
-                data += packet
+                size = struct.unpack(">L", self.client_socket.recv(4))[0]
+                data = b""
+                while len(data) < size:
+                    packet = self.client_socket.recv(4096)
+                    if not packet:
+                        break
+                    data += packet
 
-            data = zlib.decompress(data)
-            screenshot = pickle.loads(data)
-            screenshot = ImageTk.PhotoImage(screenshot)
-            self.label.config(image=screenshot)
-            self.label.image = screenshot
+                data = zlib.decompress(data)
+                screenshot = pickle.loads(data)
+                screenshot = ImageTk.PhotoImage(screenshot)
+                self.label.config(image=screenshot)
+                self.label.image = screenshot
         except Exception as e:
             print(f"Erro ao receber dados: {e}")
         finally:
-            self.root.after(100, self.receive_screen)
+            self.client_socket.close()
 
 def main():
     root = tk.Tk()
